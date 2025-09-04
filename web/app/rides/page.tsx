@@ -1,6 +1,7 @@
 
 "use client";
 import { useEffect, useState, useRef, Fragment } from 'react';
+import Link from 'next/link';
 
 // --- Types & Utility Functions ---
 interface Ride {
@@ -181,6 +182,7 @@ export default function RidesPage() {
                         <span className="inline-flex items-center gap-2">
                           <span title={ride.rideType} className="inline-block px-2 py-1 rounded-full bg-gray-100 text-lg" aria-label={ride.rideType}>{getTypeIcon(ride.rideType)}</span>
                           <span>{ride.title}</span>
+                          <Link href={`/rides/${ride.id}`} className="ml-2 text-blue-600 underline hover:text-blue-900 text-xs px-2 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-400" aria-label={`View details for ${ride.title}`}>Details</Link>
                         </span>
                       </td>
                       {/* Group (with organizer icon) */}
