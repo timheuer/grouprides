@@ -32,6 +32,7 @@ model Ride {
   rideType             String // ROAD | MTB | GRAVEL
   organizerType        String // SHOP | GROUP | INDIVIDUAL
   status               String // DRAFT | PUBLISHED | ARCHIVED
+  eventUrl             String?
   createdAtUtc         DateTime  @default(now())
   updatedAtUtc         DateTime  @updatedAt
   createdByUserId      String?

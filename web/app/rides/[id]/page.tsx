@@ -90,6 +90,12 @@ export default async function RideDetailPage({ params }: { params: { id: string 
         )}
       </div>
       <div className="mb-4 text-gray-700">
+        {ride.eventUrl && (
+          <div className="mb-2">
+            <span className="font-semibold">Event Info:</span>{' '}
+            <a href={ride.eventUrl} target="_blank" rel="noopener noreferrer" className="underline text-blue-600 hover:text-blue-900">View Event ↗</a>
+          </div>
+        )}
         <span className="font-semibold">Route:</span>{' '}
         {(() => {
           // Strava embed
