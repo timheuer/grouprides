@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import Script from 'next/script';
 
 function getTypeIcon(type: string) {
   switch (type) {
@@ -74,10 +75,73 @@ export default async function RideDetailPage({ params }: { params: { id: string 
         <a href={ride.group.websiteUrl || '#'} target="_blank" rel="noopener noreferrer" className="underline text-blue-700 hover:text-blue-900 font-medium ml-1">{ride.group.name}</a>
       </div>
       <div className="mb-4 text-gray-700">
-        <span className="font-semibold">Meetup Location:</span> {ride.meetupLocationShort}
+        <span className="font-semibold">Meetup Location:</span>{' '}
+        {ride.meetupLocationShort.match(/\d+\s+\w+\s+\w+/) ? (
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ride.meetupLocationShort)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline text-blue-600 hover:text-blue-900"
+          >
+            {ride.meetupLocationShort}
+          </a>
+        ) : (
+          <span>{ride.meetupLocationShort}</span>
+        )}
       </div>
       <div className="mb-4 text-gray-700">
-        <span className="font-semibold">Route:</span> <a href={ride.routeUrl} target="_blank" rel="noopener noreferrer" className="underline text-blue-600 hover:text-blue-900">View Route ↗</a>
+        <span className="font-semibold">Route:</span>{' '}
+        {(() => {
+          // Strava embed
+          if (ride.routeUrl.includes('strava.com/routes/')) {
+            const match = ride.routeUrl.match(/strava.com\/routes\/(\d+)/);
+            const routeId = match ? match[1] : null;
+            return routeId ? (
+              <div className="mt-2">
+                <div
+                  className="strava-embed-placeholder"
+                  data-embed-type="route"
+                  data-embed-id={routeId}
+                  data-full-width="true"
+                  data-style="standard"
+                  data-surface-type="true"
+                  data-map-hash=""
+                  data-from-embed="true"
+                ></div>
+                <Script src="https://strava-embeds.com/embed.js" strategy="afterInteractive" />
+                <div className="mt-2">
+                  <a href={ride.routeUrl} target="_blank" rel="noopener noreferrer" className="underline text-blue-600 hover:text-blue-900">Open in Strava ↗</a>
+                </div>
+              </div>
+            ) : (
+              <a href={ride.routeUrl} target="_blank" rel="noopener noreferrer" className="underline text-blue-600 hover:text-blue-900">View Route ↗</a>
+            );
+          }
+          // RideWithGPS embed
+          if (ride.routeUrl.includes('ridewithgps.com/routes/')) {
+            const match = ride.routeUrl.match(/ridewithgps.com\/routes\/(\d+)/);
+            const routeId = match ? match[1] : null;
+            return routeId ? (
+              <div className="mt-2">
+                <iframe
+                  src={`https://ridewithgps.com/embeds?type=route&id=${routeId}&sampleGraph=true`}
+                  style={{ width: '1px', minWidth: '100%', height: '700px', border: 'none' }}
+                  scrolling="no"
+                  title="RideWithGPS Route"
+                ></iframe>
+                <div className="mt-2">
+                  <a href={ride.routeUrl} target="_blank" rel="noopener noreferrer" className="underline text-blue-600 hover:text-blue-900">Open in RideWithGPS ↗</a>
+                </div>
+              </div>
+            ) : (
+              <a href={ride.routeUrl} target="_blank" rel="noopener noreferrer" className="underline text-blue-600 hover:text-blue-900">View Route ↗</a>
+            );
+          }
+          // Fallback
+          return (
+            <a href={ride.routeUrl} target="_blank" rel="noopener noreferrer" className="underline text-blue-600 hover:text-blue-900">View Route ↗</a>
+          );
+        })()}
       </div>
     </main>
   );
