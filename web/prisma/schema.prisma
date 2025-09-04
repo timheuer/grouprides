@@ -1,0 +1,39 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Group {
+  id           String   @id @default(uuid())
+  name         String
+  websiteUrl   String?
+  organizerType String // SHOP | GROUP | INDIVIDUAL
+  region       String?
+  isActive     Boolean  @default(true)
+  rides        Ride[]
+}
+
+model Ride {
+  id                   String   @id @default(uuid())
+  title                String
+  group                Group    @relation(fields: [groupId], references: [id])
+  groupId              String
+  startDateTimeUtc     DateTime
+  timezone             String
+  meetupLocationShort  String
+  meetupLocationFull   String?
+  routeUrl             String
+  routePlatform        String? // RIDEWITHGPS | STRAVA | KOMOOT
+  difficulty           String // EASY | INTERMEDIATE | HARD
+  rideType             String // ROAD | MTB | GRAVEL
+  organizerType        String // SHOP | GROUP | INDIVIDUAL
+  status               String // DRAFT | PUBLISHED | ARCHIVED
+  createdAtUtc         DateTime  @default(now())
+  updatedAtUtc         DateTime  @updatedAt
+  createdByUserId      String?
+  notes                String?
+}
