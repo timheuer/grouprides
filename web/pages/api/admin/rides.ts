@@ -1,13 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { PrismaClient } from '@prisma/client';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '../auth/[...nextauth]';
 
 const prisma = new PrismaClient();
 
-function requireAuth(req: NextApiRequest, res: NextApiResponse): boolean {
-  const header = req.headers['authorization'];
-  const token = header?.toString().replace('Bearer ', '') || (req.query.adminToken as string);
-  const expected = process.env.ADMIN_TOKEN;
-  if (!expected || token !== expected) {
+async function requireAuth(req: NextApiRequest, res: NextApiResponse): Promise<boolean> {
+  const session = await getServerSession(req, res, authOptions as any);
+  if (!session || !(session as any).isAdmin) {
     res.status(401).json({ error: 'Unauthorized' });
     return false;
   }
@@ -51,7 +51,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!['POST', 'PATCH', 'DELETE'].includes(req.method || '')) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
-  if (!requireAuth(req, res)) return;
+  if (!(await requireAuth(req, res))) return;
 
   if (req.method === 'POST') {
     const errors = validateRidePayload(req.body);

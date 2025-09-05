@@ -1,12 +1,12 @@
 "use client";
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
-import { useAdminAuth, adminFetch } from '../admin-auth-context';
+import { useSession } from 'next-auth/react';
 
 interface Ride { id:string; title:string; status:string; startDateTimeUtc:string; group:string; }
 
 export default function AdminRidesPage() {
-  const { token, invalidate } = useAdminAuth();
+  const { data: session } = useSession();
   const [rides, setRides] = useState<Ride[]>([]);
   const [nextCursor, setNextCursor] = useState<string|null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -15,11 +15,11 @@ export default function AdminRidesPage() {
   const [filter, setFilter] = useState('');
 
   useEffect(() => {
-    if (!token) return;
+    // Session gating occurs at layout; still guard if session missing
+    if (!session) return;
     setLoading(true);
-    adminFetch('/api/rides?includePast=true&limit=100', { method:'GET' }, token)
+    fetch('/api/rides?includePast=true&limit=100', { method:'GET' })
       .then(async (r: Response) => {
-        if (r.status === 401) { invalidate(); return Promise.reject('unauthorized'); }
         const j = await r.json();
         if (Array.isArray(j.data)) {
           setRides(j.data);
@@ -34,14 +34,14 @@ export default function AdminRidesPage() {
       })
       .catch(()=> setError('Failed to load'))
       .finally(()=> setLoading(false));
-  },[token, invalidate]);
+  },[session]);
 
   async function loadMore() {
-    if (!nextCursor || !token) return;
+    if (!nextCursor) return;
     setLoadingMore(true);
     try {
       const url = `/api/rides?includePast=true&limit=100&cursor=${nextCursor}`;
-      const r = await adminFetch(url, { method:'GET' }, token);
+      const r = await fetch(url, { method:'GET' });
       const j = await r.json();
       if (Array.isArray(j.data)) {
         setRides(prev => [...prev, ...j.data]);
@@ -96,7 +96,7 @@ export default function AdminRidesPage() {
                     onClick={async () => {
                       if (!window.confirm('Delete this ride permanently?')) return;
                       try {
-                        const res = await adminFetch(`/api/admin/rides?id=${r.id}`, { method: 'DELETE' }, token);
+                        const res = await fetch(`/api/admin/rides?id=${r.id}`, { method: 'DELETE' });
                         if (res.status === 204) {
                           setRides(prev => prev.filter(ride => ride.id !== r.id));
                         } else {

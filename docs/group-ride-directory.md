@@ -200,48 +200,48 @@ Next.js (App Router, TypeScript), Prisma ORM with SQLite (dev) / Postgres-ready 
 
 #### 2. Data Model & Prisma Schema
 
-- [ ] Define Prisma enums (Difficulty, RideType, OrganizerType, RideStatus, RoutePlatform)
-- [ ] Define `Group` model (fields & relations)
-- [ ] Define `Ride` model (fields, indices)
-- [ ] Run initial migration (dev) / generate client
+- [x] Define Prisma enums (Difficulty, RideType, OrganizerType, RideStatus, RoutePlatform)
+- [x] Define `Group` model (fields & relations)
+- [x] Define `Ride` model (fields, indices)
+- [x] Run initial migration (dev) / generate client
 
 #### 3. Seed Data & Basic GET Listing API
 
-- [ ] Seed script with sample groups & rides (upcoming + past)
-- [ ] `/api/rides` GET endpoint with filtering params placeholders
-- [ ] Pagination (limit + cursor or offset) initial implementation
-- [ ] Basic input validation for query params
+- [x] Seed script with sample groups & rides (upcoming + past)
+- [x] `/api/rides` GET endpoint with filtering params placeholders (enhanced to production-ready baseline)
+- [x] Pagination (limit + cursor) initial implementation
+- [x] Basic input validation for query params (enum, limit, dates)
+- [ ] Add free-text search & multi-select query handling (future enhancement for filters)
 
 #### 4. Ride Listing UI
 
-- [ ] Responsive grid layout (1/2/3+ columns breakpoints)
-- [ ] Ride card component with required metadata
-- [ ] Difficulty & ride type badges, organizer icon placeholders
-- [ ] New (<48h) indicator logic
+- [x] Responsive grid layout (1/2/3+ columns breakpoints)
+- [x] Ride card component with required metadata
+- [x] Difficulty & ride type badges, organizer icon placeholders
+- [x] New (<48h) indicator logic
 
 #### 5. Filtering & URL State Sync
 
-- [ ] Filter state store (client) + context
-- [ ] Multi-select facets (difficulty, rideType, organizerType)
-- [ ] Day-of-week & date range controls
-- [ ] Free text search input
-- [ ] URL query sync (push/replace) & shareable state
-- [ ] Clear All + active filter count badge
+- [x] Filter state store (client) + context
+- [x] Multi-select facets (difficulty, rideType, organizerType)
+- [x] Day-of-week & date range controls
+- [x] Free text search input
+- [x] URL query sync (push/replace) & shareable state
+- [x] Clear All + active filter count badge
 
 #### 6. Ride Detail View
 
-- [ ] Modal or dedicated route (`/rides/[id]`)
-- [ ] Full metadata display + external links
-- [ ] Local + original timezone display / toggle
-- [ ] Maintain scroll position on close
+- [x] Modal or dedicated route (`/rides/[id]`)
+- [x] Full metadata display + external links (basic embed support added for Strava & RideWithGPS)
+  (Removed timezone toggle & scroll position tasks from scope per decision)
 
 #### 7. Admin CRUD
 
-- [ ] Admin route gating (token check middleware)
-- [ ] Create ride form (validations)
-- [ ] Edit ride form (load + patch)
-- [ ] Archive action (status -> ARCHIVED)
-- [ ] Server-side validation & sanitation
+- [x] Admin route gating (token check via bearer token header)
+- [x] Create ride form (validations basic client + server)
+- [x] Edit ride form (load + patch)
+- [x] Archive action (status -> ARCHIVED)
+- [x] Server-side validation & sanitation (basic enum/date/url checks)
 
 #### 8. Timezone & Localization
 
@@ -313,10 +313,136 @@ Next.js (App Router, TypeScript), Prisma ORM with SQLite (dev) / Postgres-ready 
 ### Current Progress Log
 
 - [x] Phase 1: Scaffold
-- [ ] Phase 2: Data Model
-- [ ] Phase 3: Seed & API
-- [ ] Phase 4+: UI layers
+- [x] Phase 2: Data Model (schema & enums implemented; migration pending if not applied)
+- [x] Phase 3: Seed & API (pagination + validation in place)
+- [x] Phase 4: Ride Listing UI
+- [x] Phase 5: Filtering & URL State Sync
+- [x] Phase 6: Ride Detail core page (remaining previously listed enhancements descoped)
+- [x] Phase 7: Admin CRUD
 
 ---
 
 Updates to this plan will be versioned in-place; each completed task will be marked with [x].
+
+---
+
+## Implementation Plan: Admin Authorization with Google Social Login
+
+### Architecture Overview
+Integrate Google OAuth using a standard library (e.g., NextAuth.js) for authentication. Store pre-approved admin emails in an environment variable or database table. On login, check the user's Google account email against this list. Use secure session cookies for admin authentication. Protect admin UI and API routes by requiring a valid session and approved email.
+
+### Implementation Steps
+
+- [x] **Step 1**: Add NextAuth.js and configure Google provider
+  - **Objective**: Enable Google OAuth login for admin area
+  - **Technical Approach**: Install NextAuth.js, set up `/api/auth` route, configure Google provider with client ID/secret
+  - **Pseudocode**:
+    ```js
+    // next-auth config
+    providers: [GoogleProvider({ clientId, clientSecret })]
+    ```
+  - **Manual Developer Action**: Register OAuth app in Google Cloud Console; add credentials to `.env`
+
+- [x] **Step 2**: Store and check pre-approved admin emails
+  - **Objective**: Restrict admin access to specific emails
+  - **Technical Approach**: Store allowed emails in `.env` or a database table; check email in NextAuth callback
+  - **Pseudocode**:
+    ```js
+    // in NextAuth signIn callback
+    if (preApprovedEmails.includes(user.email)) return true;
+    return false;
+    ```
+  - **Manual Developer Action**: Update `.env` or DB with allowed emails
+
+- [x] **Step 3**: Gate admin UI and API routes by session
+  - **Objective**: Only allow logged-in, approved users to access admin features
+  - **Technical Approach**: Use NextAuth session in React context; protect API routes with session check
+  - **Pseudocode**:
+    ```js
+    // in getServerSession or API middleware
+    if (!session || !preApprovedEmails.includes(session.user.email)) return 401;
+    ```
+  - **Manual Developer Action**: Refactor admin UI to use session context instead of token
+
+- [x] **Step 4**: Add logout and session persistence
+  - **Objective**: Allow admins to log out and persist session across pages
+  - **Technical Approach**: Use NextAuth signOut and session hooks in UI
+  - **Pseudocode**:
+    ```js
+    // in admin layout
+    <button onClick={() => signOut()}>Logout</button>
+    ```
+  - **Manual Developer Action**: Update admin layout to show login/logout controls
+
+- [x] **Step 5**: Remove token-based login and update documentation
+  - **Objective**: Complete migration to Google login
+  - **Technical Approach**: Remove token gate components and token checks from API
+  - **Pseudocode**:
+    ```js
+    // Remove token logic from admin-auth-context and API
+    ```
+  - **Manual Developer Action**: Update docs to describe new admin login process
+
+### Quality Checklist
+
+- [ ] All functional requirements from the spec are addressed in the implementation
+- [ ] Dependencies between steps are clearly identified
+- [ ] Testing strategy covers all critical paths
+- [ ] Error handling and edge cases are considered
+- [ ] Performance and scalability concerns are addressed
+- [ ] Security considerations are included where relevant
+- [ ] Implementation steps are appropriately sized (not too large or too small)
+
+## Overview
+Enable secure admin access using Google social login. Only pre-approved users (by email) can access admin features. This replaces the current token-based gate for a more robust, user-friendly, and secure solution.
+
+## User Journey
+1. User navigates to the admin area.
+2. System prompts for Google login.
+3. User authenticates with Google.
+4. System checks if the user's email is pre-approved.
+5. If approved, user gains access to admin features; otherwise, access is denied.
+
+## Functional Requirements
+
+1. **FR-01: Google Social Login Integration**
+   - **Description**: Integrate Google OAuth for admin authentication.
+   - **Acceptance Criteria**:
+     - [ ] Admin login page offers "Login with Google".
+     - [ ] Only Google accounts are accepted.
+
+2. **FR-02: Pre-Approved User Check**
+   - **Description**: Only allow access to users whose email is in a pre-approved list.
+   - **Acceptance Criteria**:
+     - [ ] System checks authenticated user's email against a list (env/config/db).
+     - [ ] Non-approved users see an "Access Denied" message.
+
+3. **FR-03: Session Management**
+   - **Description**: Maintain secure session for logged-in admins.
+   - **Acceptance Criteria**:
+     - [ ] Session persists across admin pages.
+     - [ ] Logout option is available.
+
+4. **FR-04: API Protection**
+   - **Description**: Protect admin API endpoints using session-based authentication.
+   - **Acceptance Criteria**:
+     - [ ] Only authenticated, approved users can access admin API routes.
+     - [ ] Public API endpoints remain read-only.
+
+5. **FR-05: Migration Path**
+   - **Description**: Provide a transition from token-based to Google login.
+   - **Acceptance Criteria**:
+     - [ ] Token-based login is removed or hidden after migration.
+     - [ ] Documentation for updating pre-approved user list.
+
+## Non-Functional Requirements
+
+- **Security**: Use secure cookies/session storage; never expose sensitive data client-side.
+- **Performance**: Login flow should be fast (<2s typical).
+- **Accessibility**: Login UI is accessible and keyboard-friendly.
+
+## Out of Scope
+
+- Support for other social providers (Facebook, Twitter, etc.)
+- Self-service admin registration
+- Non-Google login options

@@ -20,7 +20,8 @@
     "next": "^14.0.0",
     "prisma": "^5.0.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "next-auth": "^4.24.7"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.0.0",

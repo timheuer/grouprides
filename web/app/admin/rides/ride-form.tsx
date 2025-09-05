@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from 'react';
-import { useAdminAuth, adminFetch } from '../admin-auth-context';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 
 interface Ride {
   id?: string;
@@ -27,7 +27,7 @@ const statuses = ['DRAFT','PUBLISHED','ARCHIVED'];
 
 export default function RideForm({ mode, rideId }: { mode:'create'|'edit'; rideId?:string }) {
   const router = useRouter();
-  const { token, invalidate } = useAdminAuth();
+  const { data: session } = useSession();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string|null>(null);
@@ -46,11 +46,8 @@ export default function RideForm({ mode, rideId }: { mode:'create'|'edit'; rideI
 
   useEffect(() => {
     if (mode === 'edit' && rideId) {
-      adminFetch(`/api/rides?id=${rideId}`, { method: 'GET' }, token || undefined)
-        .then(async r => {
-          if (r.status === 401) { invalidate(); return Promise.reject('unauthorized'); }
-          return r.json();
-        })
+      fetch(`/api/rides?id=${rideId}`, { method: 'GET' })
+        .then(r => r.json())
         .then(data => setRide({
           id: data.id,
           title: data.title,
@@ -70,7 +67,7 @@ export default function RideForm({ mode, rideId }: { mode:'create'|'edit'; rideI
         .catch(() => setError('Failed to load ride'));
     }
     setLoading(false);
-  }, [mode, rideId, token, invalidate]);
+  }, [mode, rideId]);
 
   function update<K extends keyof Ride>(k:K, v:Ride[K]) { setRide(r => ({...r, [k]:v})); }
 
@@ -80,11 +77,11 @@ export default function RideForm({ mode, rideId }: { mode:'create'|'edit'; rideI
     const payload = { ...ride, startDateTimeUtc: new Date(ride.startDateTimeUtc).toISOString() };
     const method = mode==='create' ? 'POST':'PATCH';
     const url = mode==='create'? '/api/admin/rides' : `/api/admin/rides?id=${ride.id}`;
-    const res = await adminFetch(url, {
+    const res = await fetch(url, {
       method,
       headers: { 'Content-Type':'application/json' },
       body: JSON.stringify(payload)
-    }, token || undefined);
+    });
     if (!res.ok) {
       const j = await res.json().catch(()=>({}));
       setError(j.errors ? j.errors.join(', ') : j.error || 'Save failed');
@@ -98,7 +95,7 @@ export default function RideForm({ mode, rideId }: { mode:'create'|'edit'; rideI
     if (!ride.id) return;
     if (!confirm('Archive this ride?')) return;
     setSaving(true);
-  const res = await adminFetch(`/api/admin/rides?id=${ride.id}`, { method:'PATCH', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ archive:true }) }, token || undefined);
+  const res = await fetch(`/api/admin/rides?id=${ride.id}`, { method:'PATCH', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ archive:true }) });
     if (!res.ok) { setError('Archive failed'); } else { router.push('/admin/rides'); }
     setSaving(false);
   }
