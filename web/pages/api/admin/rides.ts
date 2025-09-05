@@ -48,7 +48,7 @@ function validateRidePayload(body: any, partial = false) {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (!['POST', 'PATCH'].includes(req.method || '')) {
+  if (!['POST', 'PATCH', 'DELETE'].includes(req.method || '')) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
   if (!requireAuth(req, res)) return;
@@ -102,6 +102,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(200).json(ride);
     } catch (e:any) {
       return res.status(500).json({ error: 'Update failed', details: e.message });
+    }
+  }
+
+  if (req.method === 'DELETE') {
+    const { id } = req.query;
+    if (!id || typeof id !== 'string') return res.status(400).json({ error: 'id required in query' });
+    try {
+      await prisma.ride.delete({ where: { id } });
+      return res.status(204).end();
+    } catch (e:any) {
+      return res.status(500).json({ error: 'Delete failed', details: e.message });
     }
   }
 }

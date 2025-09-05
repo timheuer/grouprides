@@ -90,6 +90,24 @@ export default function AdminRidesPage() {
                 <td className="p-2"><span className="inline-block px-2 py-0.5 rounded bg-gray-200 text-xs font-semibold">{r.status}</span></td>
                 <td className="p-2 flex gap-2">
                   <Link href={`/admin/rides/${r.id}`} className="text-blue-600 underline">Edit</Link>
+                  <button
+                    className="text-red-600 underline"
+                    title="Delete ride"
+                    onClick={async () => {
+                      if (!window.confirm('Delete this ride permanently?')) return;
+                      try {
+                        const res = await adminFetch(`/api/admin/rides?id=${r.id}`, { method: 'DELETE' }, token);
+                        if (res.status === 204) {
+                          setRides(prev => prev.filter(ride => ride.id !== r.id));
+                        } else {
+                          const err = await res.json();
+                          alert('Delete failed: ' + (err.error || 'Unknown error'));
+                        }
+                      } catch (e) {
+                        alert('Delete failed');
+                      }
+                    }}
+                  >Delete</button>
                 </td>
               </tr>
             ))}
