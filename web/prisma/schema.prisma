@@ -7,34 +7,43 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// --- ENUMS REMOVED: use String fields instead ---
+
 model Group {
-  id           String   @id @default(uuid())
-  name         String
-  websiteUrl   String?
-  organizerType String // SHOP | GROUP | INDIVIDUAL
-  region       String?
-  isActive     Boolean  @default(true)
-  rides        Ride[]
+  id            String         @id @default(uuid())
+  name          String
+  websiteUrl    String?
+  organizerType String
+  region        String?
+  isActive      Boolean        @default(true)
+  @@index([organizerType])
 }
 
 model Ride {
-  id                   String   @id @default(uuid())
-  title                String
-  group                Group    @relation(fields: [groupId], references: [id])
-  groupId              String
-  startDateTimeUtc     DateTime
-  timezone             String
-  meetupLocationShort  String
-  meetupLocationFull   String?
-  routeUrl             String
-  routePlatform        String? // RIDEWITHGPS | STRAVA | KOMOOT
-  difficulty           String // EASY | INTERMEDIATE | HARD
-  rideType             String // ROAD | MTB | GRAVEL
-  organizerType        String // SHOP | GROUP | INDIVIDUAL
-  status               String // DRAFT | PUBLISHED | ARCHIVED
-  eventUrl             String?
-  createdAtUtc         DateTime  @default(now())
-  updatedAtUtc         DateTime  @updatedAt
-  createdByUserId      String?
-  notes                String?
+  id                  String         @id @default(uuid())
+  title               String
+  group               String
+  startDateTimeUtc    DateTime
+  timezone            String
+  meetupLocationShort String
+  meetupLocationFull  String?
+  routeUrl            String
+  routePlatform       String?
+  difficulty          String
+  rideType            String
+  organizerType       String
+  status              String     @default("PUBLISHED")
+  eventUrl            String?
+  createdAtUtc        DateTime       @default(now())
+  updatedAtUtc        DateTime       @updatedAt
+  createdByUserId     String?
+  notes               String?
+
+  @@index([startDateTimeUtc])
+  @@index([difficulty])
+  @@index([rideType])
+  @@index([organizerType])
+  @@index([status])
+  // Composite index to optimize upcoming published queries
+  @@index([status, startDateTimeUtc])
 }

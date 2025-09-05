@@ -16,12 +16,7 @@ interface Ride {
   organizerType: string;
   status: string;
   createdAtUtc: string;
-  group: {
-    id: string;
-    name: string;
-    websiteUrl?: string;
-    organizerType: string;
-  };
+  group: string;
 }
 
 function getBadgeColor(difficulty: string) {
@@ -93,18 +88,37 @@ export default function RidesPage() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const topRef = useRef<HTMLDivElement>(null);
 
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  async function fetchRides(cursor?: string) {
+    try {
+      const url = new URL('/api/rides', window.location.origin);
+      url.searchParams.set('limit', '50');
+      if (cursor) url.searchParams.set('cursor', cursor);
+      const res = await fetch(url.toString());
+      if (!res.ok) throw new Error('Failed');
+      const payload = await res.json();
+      const newRides = payload.data || [];
+      setRides((prev) => cursor ? [...prev, ...newRides] : newRides);
+      setNextCursor(payload.nextCursor || null);
+    } catch (e) {
+      setError('Failed to load rides');
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  }
+
   useEffect(() => {
-    fetch('/api/rides')
-      .then((res) => res.json())
-      .then((data) => {
-        setRides(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError('Failed to load rides');
-        setLoading(false);
-      });
+    fetchRides();
   }, []);
+
+  function handleLoadMore() {
+    if (!nextCursor) return;
+    setLoadingMore(true);
+    fetchRides(nextCursor);
+  }
 
   function handleSort(key: SortKey) {
     if (sortKey === key) {
@@ -172,38 +186,49 @@ export default function RidesPage() {
                 </thead>
                 <tbody>
                   {rides.map((ride, idx) => (
-                    <tr key={ride.id} className={"transition hover:bg-blue-50 " + (idx % 2 === 0 ? 'bg-white' : 'bg-blue-50/40')}>
-                      {/* Date/Time */}
-                      <td className="px-3 py-2 text-sm whitespace-nowrap font-mono">
-                        {formatDateTime(ride.startDateTimeUtc)}
-                      </td>
-                      {/* Title (with type icon) */}
-                      <td className="px-3 py-2 font-semibold text-blue-900">
-                        <span className="inline-flex items-center gap-2">
-                          <span title={ride.rideType} className="inline-block px-2 py-1 rounded-full bg-gray-100 text-lg" aria-label={ride.rideType}>{getTypeIcon(ride.rideType)}</span>
-                          <span>{ride.title}</span>
-                          <Link href={`/rides/${ride.id}`} className="ml-2 text-blue-600 underline hover:text-blue-900 text-xs px-2 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-400" aria-label={`View details for ${ride.title}`}>Details</Link>
-                        </span>
-                      </td>
-                      {/* Group (with organizer icon) */}
-                      <td className="px-3 py-2">
-                        <span className="inline-flex items-center gap-2">
-                          <span title={ride.organizerType} className="inline-block px-2 py-1 rounded-full bg-gray-100 text-lg" aria-label={ride.organizerType}>{getOrganizerIcon(ride.organizerType)}</span>
-                          <a href={ride.group.websiteUrl || '#'} target="_blank" rel="noopener noreferrer" className="underline text-blue-700 hover:text-blue-900 font-medium">{ride.group.name}</a>
-                        </span>
-                      </td>
-                      {/* Difficulty */}
-                      <td className="px-3 py-2">
-                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${getBadgeColor(ride.difficulty)} shadow-sm`}>{ride.difficulty}</span>
-                      </td>
-                      {/* Meetup */}
-                      <td className="px-3 py-2 text-sm" title={ride.meetupLocationShort}>{ride.meetupLocationShort}</td>
-                      {/* Route */}
-                      <td className="px-3 py-2">
-                        <a href={ride.routeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center text-blue-600 underline text-sm hover:text-blue-900">Route ↗</a>
-                      </td>
-                      {/* Removed 'New' cell */}
-                    </tr>
+                    <Link href={`/rides/${ride.id}`} key={ride.id} passHref legacyBehavior>
+                      <tr
+                        tabIndex={0}
+                        className={
+                          "cursor-pointer transition hover:bg-blue-100 focus:bg-blue-200 " +
+                          (idx % 2 === 0 ? 'bg-white' : 'bg-blue-50/40')
+                        }
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            window.location.href = `/rides/${ride.id}`;
+                          }
+                        }}
+                      >
+                        {/* Date/Time */}
+                        <td className="px-3 py-2 text-sm whitespace-nowrap font-mono">
+                          {formatDateTime(ride.startDateTimeUtc)}
+                        </td>
+                        {/* Title (with type icon) */}
+                        <td className="px-3 py-2 font-semibold text-blue-900">
+                          <span className="inline-flex items-center gap-2">
+                            <span title={ride.rideType} className="inline-block px-2 py-1 rounded-full bg-gray-100 text-lg" aria-label={ride.rideType}>{getTypeIcon(ride.rideType)}</span>
+                            <span>{ride.title}</span>
+                          </span>
+                        </td>
+                        {/* Group (as string) */}
+                        <td className="px-3 py-2">
+                          <span className="inline-flex items-center gap-2">
+                            <span title={ride.organizerType} className="inline-block px-2 py-1 rounded-full bg-gray-100 text-lg" aria-label={ride.organizerType}>{getOrganizerIcon(ride.organizerType)}</span>
+                            <span className="font-medium text-blue-900">{ride.group}</span>
+                          </span>
+                        </td>
+                        {/* Difficulty */}
+                        <td className="px-3 py-2">
+                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${getBadgeColor(ride.difficulty)} shadow-sm`}>{ride.difficulty}</span>
+                        </td>
+                        {/* Meetup */}
+                        <td className="px-3 py-2 text-sm" title={ride.meetupLocationShort}>{ride.meetupLocationShort}</td>
+                        {/* Route */}
+                        <td className="px-3 py-2">
+                          <a href={ride.routeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center text-blue-600 underline text-sm hover:text-blue-900">Route ↗</a>
+                        </td>
+                      </tr>
+                    </Link>
                   ))}
                 </tbody>
               </table>
@@ -211,6 +236,15 @@ export default function RidesPage() {
           </section>
         ))}
       </div>
+      {nextCursor && !loading && (
+        <div className="flex justify-center mt-8">
+          <button
+            onClick={handleLoadMore}
+            disabled={loadingMore}
+            className="px-6 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-400"
+          >{loadingMore ? 'Loading...' : 'Load More'}</button>
+        </div>
+      )}
       <button
         className="fixed bottom-6 right-6 bg-blue-600 text-white px-4 py-2 rounded-full shadow-lg hover:bg-blue-700 transition z-50"
         onClick={() => topRef.current?.scrollIntoView({ behavior: 'smooth' })}

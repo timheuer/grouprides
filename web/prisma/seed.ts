@@ -39,7 +39,7 @@ async function main() {
     data: [
       {
         title: 'Saturday Road Blast',
-        groupId: shopGroup.id,
+        group: shopGroup.name,
         startDateTimeUtc: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
         timezone: 'America/New_York',
         meetupLocationShort: 'Shop Main Entrance',
@@ -58,7 +58,7 @@ async function main() {
       },
       {
         title: 'Sunday Gravel Adventure',
-        groupId: clubGroup.id,
+        group: clubGroup.name,
         startDateTimeUtc: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
         timezone: 'America/New_York',
         meetupLocationShort: 'Gravel Lot',
@@ -77,7 +77,7 @@ async function main() {
       },
       {
         title: 'Weekday MTB Social',
-        groupId: clubGroup.id,
+        group: clubGroup.name,
         startDateTimeUtc: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
         timezone: 'America/New_York',
         meetupLocationShort: 'Trailhead',
@@ -96,7 +96,7 @@ async function main() {
       },
       {
         title: 'Solo Sunrise Spin',
-        groupId: soloGroup.id,
+        group: soloGroup.name,
         startDateTimeUtc: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000), // 1 day from now
         timezone: 'America/New_York',
         meetupLocationShort: 'River Park',
@@ -115,7 +115,7 @@ async function main() {
       },
       {
         title: 'Archived Gravel Classic',
-        groupId: shopGroup.id,
+        group: shopGroup.name,
         startDateTimeUtc: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
         timezone: 'America/New_York',
         meetupLocationShort: 'Old Mill',
